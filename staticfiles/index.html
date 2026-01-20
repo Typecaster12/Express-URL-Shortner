@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>URL Shortener</title>
+    <link rel="stylesheet" href="style.css" />
+</head>
+
+<body>
+
+    <div class="container">
+        <div class="form-container">
+            <form action="/submit" class="mainform" method="post">
+
+                <h2>🔗 URL Shortener</h2>
+
+                <label>Original URL</label>
+                <input type="url" placeholder="Paste your long URL here" name="mainUrl" class="mainUrl" required />
+
+                <label>Custom Alias</label>
+                <input type="text" class="aliasInp" placeholder="my-custom-link" name="alias" />
+
+                <button type="submit">Shorten URL</button>
+
+            </form>
+        </div>
+
+        <div class="response-container">
+            <a class="responseLink" target="_blank"></a>
+        </div>
+    </div>
+
+</body>
+
+</html>
