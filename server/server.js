@@ -2,13 +2,15 @@ import express from 'express'
 import { PORT } from './envValidation';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import fs, { readFile } from "fs";
 
 const app = express();
 
 //for absolute path of the file;
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
-const aliasArray = [];
+//json file;
+const DataFile = path.join(__dirname, "..", "data", "urls.json");
 
 app.use(express.static(path.join(__dirname, "..", "staticfiles")));
 
@@ -23,10 +25,37 @@ app.get("/", (req, res) => {
 //browser will give a text response to http;
 //to translae that text into js object we have to use middleware;
 app.use(express.urlencoded({ extended: true }));
+
+//function to readFile(json);
+const readDataFile = () => {
+    if (!fs.existsSync(DataFile)) {
+        fs.writeFileSync(DataFile, "{}");
+        return {};
+    }
+
+    try {
+        const rawData = fs.readFileSync(DataFile, 'utf-8')
+
+        if (!rawData.trim()) {
+            return {}
+        }
+
+        return JSON.parse(rawData);
+    } catch (err) {
+        console.error(" urls.json corrupted. Resetting file.");
+        fs.writeFileSync(DataFile, "{}");
+        return {};
+    }
+}
+
+const writeDataFile = (data) => {
+    return fs.writeFileSync(DataFile, JSON.stringify(data, null, 2));
+}
+
 app.post('/submit', (req, res) => {
 
     //contains the main/real url
-    const mainUrl = req.body.mainUrl;
+    const mainUrl = req.body.mainUrl?.trim();
     //steps: to validate url, url should be existing and valid;
     if (!mainUrl) {
         return res.status(400).send("Error : URL parameter is missing..");
@@ -49,31 +78,38 @@ app.post('/submit', (req, res) => {
     //alias;
     //for safe characters like alphanumeric space etc..
     const safeCharsRegex = /^[a-zA-Z0-9_-]+$/;
-    const alias = req.body.alias;
-    const finalAlias = alias.trim().toLowerCase(); //if white space is there this will remove the white space;
 
+    let alias = req.body.alias?.trim().toLowerCase();
     //should not be empty;
-    if (!finalAlias) {
+    if (!alias) {
         return res.status(400).send("Error : No alias is found...");
     }
 
     //finalAlias validation(must contain all safe characters);
-    if (finalAlias && !safeCharsRegex.test(finalAlias)) {
+    if (alias && !safeCharsRegex.test(alias)) {
         return res.status(400).json({
             message: 'Input contains unsafe characters. Only alphanumeric, spaces, hyphens, and underscores are allowed.'
         });
-    } else {
-        //loop to iterate through array,
-        //as array is of alias, we have to make sure no dublicate alias will be inserted;
-        for (let i = 0; i < aliasArray.length; i++) {
-            if (aliasArray[i] === finalAlias) {
-                return res.status(400).send("Error : Make sure to take unique alias. this one is already in use..");
-            } else {
-                aliasArray.push(finalAlias);
-            }
-        }
     }
-})
+
+    //readFile For urls;
+    const urls = readDataFile();
+
+    //duplicate alias prevention;
+    if (urls[alias]) {
+        return res.status(400).send("Error: Alias is already present, try something new..");
+    }
+
+    //push the data into json file;
+    urls[alias] = mainUrl;
+    writeDataFile(urls);
+
+    //send final response;
+    res.send(
+        `Short URL created: http://localhost:${PORT}/${alias}`
+    );
+});
+
 app.listen(PORT, () => {
     console.log(typeof PORT)
     console.log(`Server is running or ${PORT}`);
