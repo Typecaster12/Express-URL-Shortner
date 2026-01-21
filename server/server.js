@@ -28,13 +28,14 @@ app.use(express.urlencoded({ extended: true }));
 
 //function to readFile(json);
 const readDataFile = () => {
+    //if file does not exists, create it;
     if (!fs.existsSync(DataFile)) {
         fs.writeFileSync(DataFile, "{}");
         return {};
     }
 
     try {
-        const rawData = fs.readFileSync(DataFile, 'utf-8')
+        const rawData = fs.readFileSync(DataFile, 'utf-8');
 
         if (!rawData.trim()) {
             return {}
@@ -106,8 +107,31 @@ app.post('/submit', (req, res) => {
 
     //send final response;
     res.send(
-        `Short URL created: http://localhost:${PORT}/${alias}`
+        `http://localhost:${PORT}/${alias}`
     );
+});
+
+//!next steps:
+//*Extract "google" from the URL
+//*Read your JSON storage
+//*Check if "google" exists
+//*If yes → redirect to original URL
+//*If no → show “link not found”
+//when browser hit get request on the alias;
+app.get('/:myalias', (req, res) => {
+    const extractedAlias = req.params.myalias.toLowerCase();
+    //reading json storage;
+    //this the string, not real object;
+    const jsonStoredData = fs.readFileSync(DataFile, 'utf-8');
+    //converting into object;
+    const objectData = JSON.parse(jsonStoredData);
+
+    //if userEntered alias exists?
+    if (objectData[extractedAlias]) {
+        return res.redirect(objectData[extractedAlias]);
+    }
+
+    return res.status(404).send("Error: No link found");
 });
 
 app.listen(PORT, () => {

@@ -22,15 +22,51 @@
                 <label>Custom Alias</label>
                 <input type="text" class="aliasInp" placeholder="my-custom-link" name="alias" />
 
-                <button type="submit">Shorten URL</button>
+                <button type="submit" id="submit-btn">Shorten URL</button>
 
             </form>
         </div>
 
         <div class="response-container">
-            <a class="responseLink" target="_blank"></a>
+            <a class="responseLink" target="_blank" id="link"></a>
         </div>
     </div>
+
+    <script>
+        const btn = document.getElementById('submit-btn');
+        const anchorTag = document.getElementById('link');
+
+        //click event;
+        btn.addEventListener('click', async (e) => {
+            e.preventDefault(); //no reload needed;
+
+            const userUrl = document.querySelector(".mainUrl").value;
+            const userAlias = document.querySelector(".aliasInp").value;
+
+            const formData = new URLSearchParams({
+                mainUrl: userUrl,
+                alias: userAlias
+            });
+
+
+            // send POST request
+            const responseFromServer = await fetch("/submit", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/x-www-form-urlencoded"
+                },
+                body: formData
+            });
+
+            // read server response
+            const resultText = await responseFromServer.text();
+
+            //so the result in the anchorTag;
+            anchorTag.href = resultText;
+            anchorTag.textContent = resultText;
+            console.log(resultText);
+        });
+    </script>
 
 </body>
 
